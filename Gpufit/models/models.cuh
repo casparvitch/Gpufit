@@ -15,6 +15,10 @@
 #include "spline_3d.cuh"
 #include "spline_3d_multichannel.cuh"
 #include "spline_3d_phase_multichannel.cuh"
+#include "damped_rabi.cuh"
+#include "stretched_exp.cuh"
+#include "lorentz8_const.cuh"
+#include "lorentz8_linear.cuh"
 
 __device__ void calculate_model(
     ModelID const model_id,
@@ -31,6 +35,18 @@ __device__ void calculate_model(
 {
     switch (model_id)
     {
+    case LORENTZ8_LINEAR:
+        calculate_lorentz8_linear(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case LORENTZ8_CONST:
+        calculate_lorentz8_const(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case DAMPED_RABI:
+        calculate_damped_rabi(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
+    case STRETCHED_EXP:
+        calculate_stretched_exp(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
+        break;
     case GAUSS_1D:
         calculate_gauss1d(parameters, n_fits, n_points, value, derivative, point_index, fit_index, chunk_index, user_info, user_info_size);
         break;
@@ -79,6 +95,10 @@ void configure_model(ModelID const model_id, int & n_parameters, int & n_dimensi
 {
     switch (model_id)
     {
+    case LORENTZ8_LINEAR:       n_parameters = 26; n_dimensions = 1; break;
+    case LORENTZ8_CONST:        n_parameters = 25; n_dimensions = 1; break;
+    case DAMPED_RABI:           n_parameters = 5; n_dimensions = 1; break;
+    case STRETCHED_EXP:         n_parameters = 4; n_dimensions = 1; break;
     case GAUSS_1D:              n_parameters = 4; n_dimensions = 1; break;
     case GAUSS_2D:              n_parameters = 5; n_dimensions = 2; break;
     case GAUSS_2D_ELLIPTIC:     n_parameters = 6; n_dimensions = 2; break;

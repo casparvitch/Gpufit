@@ -26,7 +26,7 @@ def generate_gauss_1d(parameters, x):
 
 class Test(unittest.TestCase):
 
-    def test_gaussian_fit_1d(self):
+    def test_cpufit(self):
         # constants
         n_fits = 1
         n_points = 5
@@ -53,6 +53,8 @@ class Test(unittest.TestCase):
         initial_parameters = np.empty((n_fits, n_parameter), dtype=np.float32)
         initial_parameters[0, :] = (2, 1.5, 0.3, 0)
 
+        print("\n=== Cpufit test gauss 1d: ===")
+
         # call to cpufit
         parameters, states, chi_squares, number_iterations, execution_time = cf.fit(data, None, model_id,
                                                                                     initial_parameters, tolerance, \
@@ -66,11 +68,11 @@ class Test(unittest.TestCase):
         print('iterations: {}'.format(number_iterations))
         print('time: {} s'.format(execution_time))
 
-        assert (chi_squares < 1e-6)
-        assert (states == 0)
-        assert (number_iterations <= max_n_iterations)
+        self.assertTrue(chi_squares < 1e-6)
+        self.assertTrue(states == 0)
+        self.assertTrue(number_iterations <= max_n_iterations)
         for i in range(n_parameter):
-            assert (abs(true_parameters[i] - parameters[0, i]) < 1e-6)
+            self.assertTrue(abs(true_parameters[i] - parameters[0, i]) < 1e-6)
 
 if __name__ == '__main__':
 

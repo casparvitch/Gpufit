@@ -4,6 +4,10 @@
 // fitting model ID
 
 enum ModelID {
+    LORENTZ8_LINEAR = -4,
+    LORENTZ8_CONST = -3,
+    DAMPED_RABI = -2,
+    STRETCHED_EXP = -1,
     GAUSS_1D = 0,
     GAUSS_2D = 1,
     GAUSS_2D_ELLIPTIC = 2,

@@ -78,6 +78,18 @@ void FitInterface::set_number_of_parameters(ModelID const model_id)
 {
     switch (model_id)
     {
+    case LORENTZ8_LINEAR:
+        n_parameters_ = 26;
+        break;
+    case LORENTZ8_CONST:
+        n_parameters_ = 25;
+        break;
+    case DAMPED_RABI:
+        n_parameters_ = 5;
+        break;
+    case STRETCHED_EXP:
+        n_parameters_ = 4;
+        break;
     case GAUSS_1D:
         n_parameters_ = 4;
         break;

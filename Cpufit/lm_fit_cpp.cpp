@@ -142,6 +142,140 @@ void LMFitCPP::decompose_hessian_LUP(std::vector<REAL> const & hessian)
         *state_ = FitState::SINGULAR_HESSIAN;
 }
 
+void LMFitCPP::calc_derivatives_lorentz8_linear(
+    std::vector<REAL> & derivatives)
+{
+    REAL * user_info_float = (REAL*)user_info_;
+    REAL const * p = parameters_;
+    
+    // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
+    REAL g; // HWHM
+    REAL c; // position
+    REAL a; // amplitude
+
+    for (std::size_t point_index = 0; point_index < info_.n_points_; point_index++)
+    {
+        REAL x = user_info_float[point_index];
+
+        derivatives[0 * info_.n_points_ + point_index] = 1; //wrt c
+        derivatives[1 * info_.n_points_ + point_index] = x; //wrt m
+        for (int i = 2; i < 26; i+=3) {
+            // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
+            g = p[i] / 2;
+            c = p[i+1];
+            a = p[i+2];
+
+            // wrt fwhm
+            derivatives[i * info_.n_points_ + point_index] = (a * g * (x - c) * (x - c)) / 
+                ( (g * g + (x - c) * (x - c)) * (g * g + (x - c) * (x - c)) );
+            // ((2 * a * g) / (g * g + (x - c) * (x - c))) - (
+            //     (2 * a * g * g * g) / 
+            //     ( (g * g + (x - c) * (x - c)) * (g * g + (x - c) * (x - c)) )
+            // );
+            
+            // wrt position
+            derivatives[(i+1) * info_.n_points_ + point_index] =  (2 * a * g * g * (x - c)) / 
+                ( (g * g + (x - c) * (x - c)) * (g * g + (x - c) * (x - c)));
+            // wrt amplitude
+            derivatives[(i+2) * info_.n_points_ + point_index] = g * g / ((x - c) * (x - c) + g * g);
+        }
+    }
+}
+
+void LMFitCPP::calc_derivatives_lorentz8_const(
+    std::vector<REAL> & derivatives)
+{
+    REAL * user_info_float = (REAL*)user_info_;
+    REAL const * p = parameters_;
+    
+    // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
+    REAL g; // HWHM
+    REAL c; // position
+    REAL a; // amplitude
+
+    for (std::size_t point_index = 0; point_index < info_.n_points_; point_index++)
+    {
+        REAL x = user_info_float[point_index];
+
+        derivatives[0 * info_.n_points_ + point_index] = 1; //wrt c
+        for (int i = 1; i < 25; i+=3) {
+            // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
+            g = p[i] / 2;
+            c = p[i+1];
+            a = p[i+2];
+
+            // wrt fwhm
+            derivatives[i * info_.n_points_ + point_index] = (a * g * (x - c) * (x - c)) / 
+                ( (g * g + (x - c) * (x - c)) * (g * g + (x - c) * (x - c)) );
+            // ((2 * a * g) / (g * g + (x - c) * (x - c))) - (
+            //     (2 * a * g * g * g) / 
+            //     ( (g * g + (x - c) * (x - c)) * (g * g + (x - c) * (x - c)) )
+            // );
+            
+            // wrt position
+            derivatives[(i+1) * info_.n_points_ + point_index] =  (2 * a * g * g * (x - c)) / 
+                ( (g * g + (x - c) * (x - c)) * (g * g + (x - c) * (x - c)));
+            // wrt amplitude
+            derivatives[(i+2) * info_.n_points_ + point_index] = g * g / ((x - c) * (x - c) + g * g);
+        }
+    }
+}
+
+void LMFitCPP::calc_derivatives_damped_rabi(
+    std::vector<REAL> & derivatives)
+{
+    REAL * user_info_float = (REAL*)user_info_;
+    REAL const c = parameters_[0];
+    REAL const omega = parameters_[1];
+    REAL const pos = parameters_[2];
+    REAL const amp = parameters_[3];
+    REAL const tau = parameters_[4];
+
+    for (std::size_t point_index = 0; point_index < info_.n_points_; point_index++)
+    {
+        REAL x = user_info_float[point_index];
+
+        derivatives[0 * info_.n_points_ + point_index] = 1; // wrt c
+        derivatives[1 * info_.n_points_ + point_index] = amp * (pos - x) * std::sin(omega * (x - pos)) * 
+            std::exp(-x / tau); // wrt omega
+        derivatives[2 * info_.n_points_ + point_index] = (amp * omega * std::sin(omega * (x - pos))) * 
+            std::exp(-x / tau); // wrt pos
+        derivatives[3 * info_.n_points_ + point_index] = std::exp(-x / tau) * std::cos(omega * (x - pos)); // wrt amp
+        derivatives[4 * info_.n_points_ + point_index] = (amp * x * std::cos(omega * (x - pos))) / 
+            (std::exp(x / tau) * tau * tau); // wrt tau
+    }
+}
+
+void LMFitCPP::calc_derivatives_stretched_exp(
+    std::vector<REAL> & derivatives)
+{
+    REAL * user_info_float = (REAL*)user_info_;
+    REAL const * p = parameters_;
+
+    // model = p[0] + p[2] * exp(-std::pow( (x / p[1]), p[3]) );
+    for (std::size_t point_index = 0; point_index < info_.n_points_; point_index++)
+    {
+        REAL x = user_info_float[point_index];
+
+        REAL const stretch = std::pow(x / p[1], p[3]);
+
+        derivatives[0 * info_.n_points_ + point_index] = 1; //wrt c
+        derivatives[1 * info_.n_points_ + point_index] = (1 / p[1]) * (
+            p[2]
+            * p[3]
+            * std::exp(-stretch)
+            * stretch
+        ); // wrt charac_exp_t
+        derivatives[2 * info_.n_points_ + point_index] = std::exp(-stretch); // wrt amp
+        derivatives[3 * info_.n_points_ + point_index] = (
+            -p[2]
+            * std::exp(-stretch)
+            * stretch
+            * std::log(x / p[1])
+        ); // wrt power_exp
+    }
+}
+
 void LMFitCPP::calc_derivatives_gauss2d(
     std::vector<REAL> & derivatives)
 {
@@ -771,6 +905,93 @@ void LMFitCPP::calc_derivatives_spline3d_multichannel(
     }
 }
 
+
+void LMFitCPP::calc_values_lorentz8_linear(
+    std::vector<REAL>& values)
+{
+    REAL * user_info_float = (REAL*)user_info_;
+    REAL const * p = parameters_;
+    
+    // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
+    REAL g; // HWHM
+    REAL c; // position
+    REAL a; // amplitude
+
+    for (std::size_t point_index = 0; point_index < info_.n_points_; point_index++)
+    {
+        REAL x = user_info_float[point_index];
+        values[point_index] = p[1] * x + p[0]; // + mx + c
+
+        for (int i = 2; i < 26; i+=3) {
+            // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
+            g = p[i] / 2;
+            c = p[i+1];
+            a = p[i+2];
+
+            values[point_index] += a * g * g / ( (x - c) * (x - c) + g * g);
+        }
+    }
+}
+
+void LMFitCPP::calc_values_lorentz8_const(
+    std::vector<REAL>& values)
+{
+    REAL * user_info_float = (REAL*)user_info_;
+    REAL const * p = parameters_;
+    
+    // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
+    REAL g; // HWHM
+    REAL c; // position
+    REAL a; // amplitude
+
+    for (std::size_t point_index = 0; point_index < info_.n_points_; point_index++)
+    {
+        REAL x = user_info_float[point_index];
+        values[point_index] = p[0]; // + constant
+
+        for (int i = 1; i < 25; i+=3) {
+            // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
+            g = p[i] / 2;
+            c = p[i+1];
+            a = p[i+2];
+
+            values[point_index] += a * g * g / ( (x - c) * (x - c) + g * g);
+        }
+    }
+}
+
+void LMFitCPP::calc_values_damped_rabi(
+    std::vector<REAL>& values)
+{
+    REAL * user_info_float = (REAL*)user_info_;
+    REAL const c = parameters_[0];
+    REAL const omega = parameters_[1];
+    REAL const pos = parameters_[2];
+    REAL const amp = parameters_[3];
+    REAL const tau = parameters_[4];
+
+    for (std::size_t point_index = 0; point_index < info_.n_points_; point_index++)
+    {
+        REAL x = user_info_float[point_index];
+
+        values[point_index] = c + amp * std::exp(-(x/tau)) * std::cos(omega * (x-pos));
+    }
+}
+
+void LMFitCPP::calc_values_stretched_exp(
+    std::vector<REAL>& values)
+{
+    REAL * user_info_float = (REAL*)user_info_;
+    REAL const * p = parameters_;
+
+    for (std::size_t point_index = 0; point_index < info_.n_points_; point_index++)
+    {
+        REAL x = user_info_float[point_index];
+
+        values[point_index] = p[0] + p[2] * exp(-std::pow(x / p[1], p[3]) );
+    }
+}
+
 void LMFitCPP::calc_values_cauchy2delliptic(std::vector<REAL>& cauchy)
 {
     int const size_x = int(std::sqrt(REAL(info_.n_points_)));
@@ -816,11 +1037,11 @@ void LMFitCPP::calc_values_gauss2delliptic(std::vector<REAL>& gaussian)
     int const size_y = size_x;
     for (int iy = 0; iy < size_y; iy++)
     {
+        REAL const argy = (iy - parameters_[2]) * (iy - parameters_[2]) / (2 * parameters_[4] * parameters_[4]);
         for (int ix = 0; ix < size_x; ix++)
         {
-            REAL argx = (ix - parameters_[1]) * (ix - parameters_[1]) / (2 * parameters_[3] * parameters_[3]);
-            REAL argy = (iy - parameters_[2]) * (iy - parameters_[2]) / (2 * parameters_[4] * parameters_[4]);
-            REAL ex = exp(-(argx + argy));
+            REAL const argx = (ix - parameters_[1]) * (ix - parameters_[1]) / (2 * parameters_[3] * parameters_[3]);
+            REAL const ex = exp(-(argx + argy));
 
             gaussian[iy*size_x + ix]
                 = parameters_[0] * ex + parameters_[5];
@@ -1298,6 +1519,26 @@ void LMFitCPP::calc_curve_values(std::vector<REAL>& curve, std::vector<REAL>& de
     {
         calc_values_spline3d_multichannel(curve);
         calc_derivatives_spline3d_multichannel(derivatives);
+    }
+    else if (info_.model_id_ == STRETCHED_EXP)
+    {
+        calc_values_stretched_exp(curve);
+        calc_derivatives_stretched_exp(derivatives);
+    }
+    else if (info_.model_id_ == DAMPED_RABI)
+    {
+        calc_values_damped_rabi(curve);
+        calc_derivatives_damped_rabi(derivatives);
+    }
+    else if (info_.model_id_ == LORENTZ8_CONST)
+    {
+        calc_values_lorentz8_const(curve);
+        calc_derivatives_lorentz8_const(derivatives);
+    }
+    else if (info_.model_id_ == LORENTZ8_LINEAR)
+    {
+        calc_values_lorentz8_linear(curve);
+        calc_derivatives_lorentz8_linear(derivatives);
     }
 }
 

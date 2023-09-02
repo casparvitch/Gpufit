@@ -6,60 +6,57 @@ import unittest
 import numpy as np
 import pygpufit.gpufit as gf
 
-def generate_gauss_1d(parameters, x):
+def generate_stretched_exp(parameters, x):
     """
-    Generates a 1D Gaussian curve.
+    Generates a 1D damped rabi curve.
 
-    :param parameters: The parameters (a, x0, s, b)
+    :param parameters: The parameters (c, exp_t, amp, power)
     :param x: The x values
-    :return: A 1D Gaussian curve.
+    :return: A 1D damped rabi curve
     """
 
-    a = parameters[0]
-    x0 = parameters[1]
-    s = parameters[2]
-    b = parameters[3]
+    c, exp_t, amp, power = parameters
 
-    y = a * np.exp(-np.square(x - x0) / (2 * s**2)) + b
-
-    return y
+    return c + amp * np.exp( (x / exp_t) ** power)
 
 class Test(unittest.TestCase):
 
     def test_gpufit(self):
         # constants
         n_fits = 1
-        n_points = 5
-        n_parameter = 4  # model will be GAUSS_1D
+        n_points = 25
+        n_parameter = 4  # model will be STRETCHED_EXP
 
         # true parameters
-        true_parameters = np.array((4, 2, 0.5, 1), dtype=np.float32)
+        true_parameters = np.array((0.01, 12, 1.0, 0.7), dtype=np.float32)
 
         # generate data
         data = np.empty((n_fits, n_points), dtype=np.float32)
-        x = np.arange(n_points, dtype=np.float32)
-        data[0, :] = generate_gauss_1d(true_parameters, x)
+        x = np.linspace(0.1, 20, n_points, dtype=np.float32)
+        data[0, :] = generate_stretched_exp(true_parameters, x)
 
         # tolerance
-        tolerance = 0.001
+        tolerance = 1e-9
 
         # max_n_iterations
-        max_n_iterations = 10
+        max_n_iterations = 50
 
         # model id
-        model_id = gf.ModelID.GAUSS_1D
+        model_id = gf.ModelID.STRETCHED_EXP
 
         # initial parameters
         initial_parameters = np.empty((n_fits, n_parameter), dtype=np.float32)
-        initial_parameters[0, :] = (2, 1.5, 0.3, 0)
+        initial_parameters[0, :] = (0.05, 10, 0.5, 0.5)
 
-        print("\n=== Gpufit test gauss 1d: ===")
+        print("\n=== Gpufit test stretched_exp: ===")
         self.assertTrue(gf.cuda_available(), msg=gf.get_last_error())
 
         # call to gpufit
         parameters, states, chi_squares, number_iterations, execution_time = gf.fit(data, None, model_id,
-                                                                                    initial_parameters, tolerance, \
-                                                                                    max_n_iterations, None, None, None)
+                                                                                    initial_parameters, tolerance=tolerance, \
+                                                                                    max_number_iterations=max_n_iterations, parameters_to_fit=None, 
+                                                                                    estimator_id=None, user_info=np.array(x, dtype=np.float32),)
+
 
         # print results
         for i in range(n_parameter):
@@ -73,7 +70,7 @@ class Test(unittest.TestCase):
         self.assertTrue(states == 0)
         self.assertTrue(number_iterations <= max_n_iterations)
         for i in range(n_parameter):
-            self.assertTrue(abs(true_parameters[i] - parameters[0, i]) < 1e-6)
+            self.assertTrue(abs(true_parameters[i] - parameters[0, i]) < 1e-5)
 
 
 if __name__ == '__main__':
