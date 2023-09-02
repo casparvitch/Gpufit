@@ -79,6 +79,18 @@ private:
 
     void calc_curve_values(std::vector<REAL>& curve, std::vector<REAL>& derivatives);
 
+    void calc_values_lorentz8_linear(std::vector<REAL>& values);
+    void calc_derivatives_lorentz8_linear(std::vector<REAL> & derivatives);
+
+    void calc_values_lorentz8_const(std::vector<REAL>& values);
+    void calc_derivatives_lorentz8_const(std::vector<REAL> & derivatives);
+
+    void calc_values_damped_rabi(std::vector<REAL>& values);
+    void calc_derivatives_damped_rabi(std::vector<REAL> & derivatives);
+
+    void calc_values_stretched_exp(std::vector<REAL>& values);
+    void calc_derivatives_stretched_exp(std::vector<REAL> & derivatives);
+
     void calc_values_gauss2d(std::vector<REAL>& gaussian);
     void calc_derivatives_gauss2d(std::vector<REAL> & derivatives);
 
