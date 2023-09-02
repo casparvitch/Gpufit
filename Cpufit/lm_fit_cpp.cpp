@@ -922,7 +922,6 @@ void LMFitCPP::calc_values_lorentz8_linear(
         REAL x = user_info_float[point_index];
         values[point_index] = p[1] * x + p[0]; // + mx + c
 
-        derivatives[0 * info_.n_points_ + point_index] = 1; //wrt c
         for (int i = 2; i < 26; i+=3) {
             // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
             g = p[i] / 2;
@@ -950,7 +949,6 @@ void LMFitCPP::calc_values_lorentz8_const(
         REAL x = user_info_float[point_index];
         values[point_index] = p[0]; // + constant
 
-        derivatives[0 * info_.n_points_ + point_index] = 1; //wrt c
         for (int i = 1; i < 25; i+=3) {
             // Lorentzian: a*g^2/ ((x-c)^2 + g^2)
             g = p[i] / 2;
