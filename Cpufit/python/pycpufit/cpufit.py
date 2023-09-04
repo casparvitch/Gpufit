@@ -24,13 +24,13 @@ else:
 lib = cdll.LoadLibrary(lib_path)
 
 # %%
-cpufit_func = lib.cpufit
+cpufit_func = lib.cpufit_constrained
 
 # %%
 
 cpufit_func.restype = c_int
 cpufit_func.argtypes = [c_size_t, c_size_t, POINTER(c_float), POINTER(c_float), c_int, POINTER(c_float),
-                        c_float, c_int, POINTER(c_int), c_int, c_size_t,
+                        POINTER(c_float), POINTER(c_int), c_float, c_int, POINTER(c_int), c_int, c_size_t,
                         POINTER(c_char), POINTER(c_float), POINTER(c_int), POINTER(c_float), POINTER(c_int)]
 
 # int cpufit
@@ -271,18 +271,18 @@ def fit_constrained(data, weights, model_id, initial_parameters, constraints=Non
         weights_p, \
         cpufit_func.argtypes[4](model_id), \
         initial_parameters.ctypes.data_as(cpufit_func.argtypes[5]), \
-        # constraints_p, \
-        # constraint_types.ctypes.data_as(cpufit_func.argtypes[7]), \
-        cpufit_func.argtypes[6](tolerance), \
-        cpufit_func.argtypes[7](max_number_iterations), \
-        parameters_to_fit.ctypes.data_as(cpufit_func.argtypes[8]), \
-        cpufit_func.argtypes[9](estimator_id), \
-        cpufit_func.argtypes[10](user_info_size), \
+        constraints_p, \
+        constraint_types.ctypes.data_as(cpufit_func.argtypes[7]), \
+        cpufit_func.argtypes[8](tolerance), \
+        cpufit_func.argtypes[9](max_number_iterations), \
+        parameters_to_fit.ctypes.data_as(cpufit_func.argtypes[10]), \
+        cpufit_func.argtypes[11](estimator_id), \
+        cpufit_func.argtypes[12](user_info_size), \
         user_info_p, \
-        parameters.ctypes.data_as(cpufit_func.argtypes[12]), \
-        states.ctypes.data_as(cpufit_func.argtypes[13]), \
-        chi_squares.ctypes.data_as(cpufit_func.argtypes[14]), \
-        number_iterations.ctypes.data_as(cpufit_func.argtypes[15]))
+        parameters.ctypes.data_as(cpufit_func.argtypes[14]), \
+        states.ctypes.data_as(cpufit_func.argtypes[15]), \
+        chi_squares.ctypes.data_as(cpufit_func.argtypes[16]), \
+        number_iterations.ctypes.data_as(cpufit_func.argtypes[17]))        
     t1 = time.perf_counter()
 
     # check status

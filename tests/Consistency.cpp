@@ -170,7 +170,7 @@ void generate_input_gauss_fit_2d_elliptic(FitInput & i)
 
    	// constraints
 	i.constraints = { 0., 5., 0., 5., 0., 5., 0., 1.0, 0., 1.0, -10., 10.  };
-	i.constraint_types = { LOWER_UPPER, LOWER_UPPER, LOWER_UPPER, LOWER_UPPER, LOWER_UPPER, LOWER_UPPER };};
+	i.constraint_types = { LOWER_UPPER, LOWER_UPPER, LOWER_UPPER, LOWER_UPPER, LOWER_UPPER, LOWER_UPPER };
 
     // tolerance and max_n_iterations
     i.tolerance = 0.001f;

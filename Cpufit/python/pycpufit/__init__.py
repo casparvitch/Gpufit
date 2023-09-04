@@ -1,1 +1,1 @@
-from cpufit import *
+from .cpufit import *
